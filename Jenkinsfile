@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
 
@@ -37,19 +38,24 @@ pipeline {
         success {
             emailext(
                 to: 'yogeshtraj@gmail.com',
+                from: 'yogeshtraj@gmail.com',
+                replyTo: 'yogeshtraj@gmail.com',
                 subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: """The Jenkins pipeline completed successfully.
 
 Job: ${env.JOB_NAME}
 Build Number: ${env.BUILD_NUMBER}
 Build URL: ${env.BUILD_URL}
-"""
+
+All pipeline stages completed successfully."""
             )
         }
 
         failure {
             emailext(
                 to: 'yogeshtraj@gmail.com',
+                from: 'yogeshtraj@gmail.com',
+                replyTo: 'yogeshtraj@gmail.com',
                 subject: "FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: """The Jenkins pipeline failed.
 
@@ -57,8 +63,7 @@ Job: ${env.JOB_NAME}
 Build Number: ${env.BUILD_NUMBER}
 Build URL: ${env.BUILD_URL}
 
-Please check the Jenkins Console Output for details.
-"""
+Please check the Jenkins Console Output for details."""
             )
         }
     }
