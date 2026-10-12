@@ -1,4 +1,3 @@
-```groovy
 pipeline {
     agent any
 
@@ -64,4 +63,3 @@ Please check the Jenkins Console Output for details.
         }
     }
 }
-```
