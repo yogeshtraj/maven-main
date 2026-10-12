@@ -7,7 +7,7 @@ pipeline {
     }
 
     stages {
-        stage('git repo & clean') {
+        stage('Git Repository & Clean') {
             steps {
                 bat 'if exist maven-main rmdir /s /q maven-main'
                 bat 'git clone https://github.com/yogeshtraj/maven-main.git'
@@ -15,21 +15,48 @@ pipeline {
             }
         }
 
-        stage('install') {
+        stage('Install') {
             steps {
                 bat 'mvn install -f maven-main'
             }
         }
 
-        stage('test') {
+        stage('Test') {
             steps {
                 bat 'mvn test -f maven-main'
             }
         }
 
-        stage('package') {
+        stage('Package') {
             steps {
                 bat 'mvn package -f maven-main'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                bat 'docker version'
+                bat 'docker build -t yogeshrajt/maven-main:%BUILD_NUMBER% -t yogeshrajt/maven-main:latest .'
+            }
+        }
+
+        stage('Push Docker Image to Docker Hub') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: 'DOCKERHUB_USER',
+                        passwordVariable: 'DOCKERHUB_TOKEN'
+                    )
+                ]) {
+                    bat '''
+                        @echo off
+                        powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:DOCKERHUB_TOKEN | docker login --username $env:DOCKERHUB_USER --password-stdin"
+                    '''
+
+                    bat 'docker push yogeshrajt/maven-main:%BUILD_NUMBER%'
+                    bat 'docker push yogeshrajt/maven-main:latest'
+                }
             }
         }
     }
@@ -41,13 +68,16 @@ pipeline {
                 from: 'yogeshtraj@gmail.com',
                 replyTo: 'yogeshtraj@gmail.com',
                 subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: """The Jenkins pipeline completed successfully.
+                body: """The Jenkins CI/CD pipeline completed successfully.
 
 Job: ${env.JOB_NAME}
 Build Number: ${env.BUILD_NUMBER}
+Docker Image: yogeshrajt/maven-main:${env.BUILD_NUMBER}
+Docker Image: yogeshrajt/maven-main:latest
 Build URL: ${env.BUILD_URL}
 
-All pipeline stages completed successfully."""
+Maven build, tests, packaging, Docker image creation
+and Docker Hub publishing completed successfully."""
             )
         }
 
@@ -57,7 +87,7 @@ All pipeline stages completed successfully."""
                 from: 'yogeshtraj@gmail.com',
                 replyTo: 'yogeshtraj@gmail.com',
                 subject: "FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: """The Jenkins pipeline failed.
+                body: """The Jenkins CI/CD pipeline failed.
 
 Job: ${env.JOB_NAME}
 Build Number: ${env.BUILD_NUMBER}
